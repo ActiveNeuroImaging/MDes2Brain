@@ -30,8 +30,8 @@ ThoughtProbes = [
 ]
 
 # Supabase configuration
-SUPABASE_URL = "https://hudbfsdwygfrydpjfnwh.supabase.co"  # Replace with your Supabase URL
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1ZGJmc2R3eWdmcnlkcGpmbndoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NjYyODcsImV4cCI6MjA2NzI0MjI4N30.brUlD4a7dcDuXVwWZsuEkJsn399-mUnvV0JUStGlSX4"  # Replace with your Supabase anon key
+SUPABASE_URL = "https://your-project.supabase.co"  # Replace with your Supabase URL
+SUPABASE_KEY = "your-anon-key"  # Replace with your Supabase anon key
 
 def save_to_supabase(data):
     """Save data to Supabase database"""
@@ -281,7 +281,7 @@ def update_answer(slider_value, question_index, answers):
 @app.callback(
     Output('brain-plot', 'figure'),
     Input('brain-switch', 'value'),
-    State('answers', 'data')
+    Input('answers', 'data')  # Changed from State to Input to trigger updates
 )
 def update_brain_visualization(brain_switch, answers):
     """
@@ -299,6 +299,11 @@ def update_brain_visualization(brain_switch, answers):
     grads = np.zeros(gradsRaw.shape)
     gradsMean = grads[:, 0]
     
+    # Debug info - you can remove this later
+    print(f"Brain switch: {brain_switch}")
+    print(f"Answers: {answers}")
+    print(f"Answers length: {len(answers) if answers else 'None'}")
+    
     if brain_switch and answers and len(answers) == len(ThoughtProbes):
         # Use answers to make predictions
         X = np.array(answers).reshape(1, -1)
@@ -309,16 +314,21 @@ def update_brain_visualization(brain_switch, answers):
             for i, model in enumerate(fitted_models):
                 prediction[i] = model.predict(X)[0]
             
+            print(f"Predictions: {prediction}")  # Debug info
+            
             for i in range(n_grad):
                 grads[:, i] = np.asarray(gradsRaw[:, i]) * prediction[i]
             
             gradsMean = grads.mean(axis=1)
+            print("Using prediction-based visualization")  # Debug info
         except Exception as e:
+            print(f"Model loading error: {e}")  # Debug info
             # If model loading fails, use default visualization
             gradsMean = gradsRaw.mean(axis=1)
     else:
         # Default visualization without prediction
         gradsMean = gradsRaw.mean(axis=1)
+        print("Using default visualization")  # Debug info
     
     x, y, z = lvert[:, 0], lvert[:, 1], lvert[:, 2]
     
@@ -327,6 +337,7 @@ def update_brain_visualization(brain_switch, answers):
         y=y,
         z=z,
         color=gradsMean,
+        title="Визуализация мозга" + (" (на основе ответов)" if brain_switch and answers else " (по умолчанию)")
     )
     
     # Set camera viewing angle
