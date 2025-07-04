@@ -6,3 +6,4 @@ joblib
 gunicorn
 requests
 pandas
+sklearn
