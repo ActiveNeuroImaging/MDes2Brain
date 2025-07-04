@@ -30,8 +30,8 @@ ThoughtProbes = [
 ]
 
 # Supabase configuration
-SUPABASE_URL = "https://your-project.supabase.co"  # Replace with your Supabase URL
-SUPABASE_KEY = "your-anon-key"  # Replace with your Supabase anon key
+SUPABASE_URL = "https://hudbfsdwygfrydpjfnwh.supabase.co"  # Replace with your Supabase URL
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1ZGJmc2R3eWdmcnlkcGpmbndoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NjYyODcsImV4cCI6MjA2NzI0MjI4N30.brUlD4a7dcDuXVwWZsuEkJsn399-mUnvV0JUStGlSX4"  # Replace with your Supabase anon key
 
 def save_to_supabase(data):
     """Save data to Supabase database"""
