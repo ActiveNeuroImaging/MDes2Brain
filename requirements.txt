@@ -6,4 +6,4 @@ joblib
 gunicorn
 requests
 pandas
-sklearn
+scikit-learn
