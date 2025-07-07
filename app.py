@@ -394,7 +394,7 @@ def update_brain_visualization(brain_switch, answers):
         ),
         # Better mobile layout
         margin=dict(l=0, r=0, t=40, b=0),
-        font=dict(size=8),
+        font=dict(size=4),
         scene=dict(
             #aspectmode='cube',  # Maintain proportions
             dragmode='orbit'    # Better touch interaction
