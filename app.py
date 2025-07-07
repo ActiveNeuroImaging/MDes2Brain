@@ -61,69 +61,90 @@ server = app.server
 
 def page1_layout():
     return dbc.Container([
-        html.H2("Информация"),
-        html.P("Добро пожаловать! Это приложение использует генеративную модель, которая собирает субъективные описания вашего опыта и сопоставляет их с фМРТ-данными. На основе этого мы восстанавливаем и визуализируем активность мозга во время изменённого состояния сознания — другими словами, показываем, как мог «выглядеть» ваш мозг, опираясь на то, что вы почувствовали и пережили."),
+        html.H2("Информация", className="text-center mb-4"),
+        html.P("Добро пожаловать! Это приложение использует генеративную модель, которая собирает субъективные описания вашего опыта и сопоставляет их с фМРТ-данными. На основе этого мы восстанавливаем и визуализируем активность мозга во время изменённого состояния сознания — другими словами, показываем, как мог «выглядеть» ваш мозг, опираясь на то, что вы почувствовали и пережили.",
+               className="text-justify mb-4"),
         html.Hr(),
         
         # Participant Information Form
-        html.H4("Информация об участнике"),
+        html.H4("Информация об участнике", className="mb-3"),
         dbc.Row([
             dbc.Col([
                 dbc.Label("Возраст:"),
-                dbc.Input(id="age-input", type="number", placeholder="Введите ваш возраст", min=1, max=120),
-            ], width=6),
-        ], className="mb-3"),
+                dbc.Input(id="age-input", type="number", placeholder="Введите ваш возраст", 
+                         min=1, max=120, className="mb-3"),
+            ], width=12, md=6),
+        ]),
         
         dbc.Row([
             dbc.Col([
                 dbc.Label("Пожалуйста, укажите, какое вещество или комбинацию веществ вы приняли:"),
                 dbc.Textarea(id="comments-input", placeholder="Укажите одно или более...", 
-                           style={"height": "100px"}),
+                           style={"height": "100px"}, className="mb-3"),
             ], width=12),
-        ], className="mb-3"),
+        ]),
         
-        html.Div(id="participant-save-status", style={"color": "green", "margin": "10px 0"}),
+        html.Div(id="participant-save-status", className="mb-3"),
         
-        dbc.Row([
-            dbc.Col(dbc.Button("Сохранить информацию и перейти к вопросам", id="save-info-btn", color="primary"), width="auto"),
-            dbc.Col(dbc.Button("Посмотреть мозг", href="/brain", color="info"), width="auto"),
-        ], className="gap-2"),
-    ], className="p-4")
+        # Button container that will be updated based on save status
+        html.Div(id="button-container", children=[
+            dbc.Button("Сохранить информацию и перейти к вопросам", 
+                      id="save-info-btn", color="primary", size="lg", className="w-100 mb-2")
+        ]),
+    ], className="p-3", fluid=True)
 
 def page2_layout():
-    # Hidden stores for question index
     return dbc.Container([
-        html.H2("Зондирование мыслей"),
+        html.H2("Зондирование мыслей", className="text-center mb-4"),
         dcc.Store(id="question-index", data=0),
         html.Div(id="question-container"),
+        
+        # Mobile-friendly button layout
+        html.Div(id="question-save-status", className="mt-3 mb-3 text-center"),
+        
         dbc.Row([
-            dbc.Col(dbc.Button("Назад", id="prev-btn", color="secondary"), width="auto"),
-            dbc.Col(dbc.Button("Далее", id="next-btn", color="primary"), width="auto"),
-            dbc.Col(dbc.Button("Посмотреть мозг", href="/brain", color="info"), width="auto"),
-            dbc.Col(html.Div(id="save-status", style={"paddingLeft": "20px", "color": "green"}))
-        ], className="mt-3 align-items-center"),
-    ], className="p-4")
+            dbc.Col([
+                dbc.Button("Назад", id="prev-btn", color="secondary", size="lg", className="w-100 mb-2")
+            ], width=12, md=4),
+            dbc.Col([
+                dbc.Button("Далее", id="next-btn", color="primary", size="lg", className="w-100 mb-2")
+            ], width=12, md=4),
+            dbc.Col([
+                html.Div(id="brain-button-container")  # Will be populated when data is saved
+            ], width=12, md=4),
+        ], className="mt-3"),
+    ], className="p-3", fluid=True)
 
 def page3_layout():
-    # Brain visualization page with dynamic updates based on answers
     return dbc.Container([
-        html.H2("Визуализация мозга"),
+        html.H2("Визуализация мозга", className="text-center mb-4"),
         dbc.Row([
             dbc.Col([
                 dbc.Label("Показать предсказанную активность мозга:"),
                 dbc.Switch(id="brain-switch", value=False, className="mb-3"),
             ], width=12)
         ]),
-        dcc.Graph(id="brain-plot", style={'width': '100vh', 'height': '100vh'}),
-        dbc.Button("Назад к информации", href="/", color="secondary", className="mt-3"),
-    ], className="p-4")
+        
+        # Responsive graph container
+        html.Div([
+            dcc.Graph(id="brain-plot", 
+                     style={'width': '100%', 'height': '70vh', 'min-height': '400px'},
+                     config={'responsive': True, 'displayModeBar': True})
+        ], className="mb-3"),
+        
+        dbc.Button("Назад к информации", href="/", color="secondary", 
+                  size="lg", className="w-100 mb-2"),
+    ], className="p-3", fluid=True)
 
 
 # Main app layout with URL router
 app.layout = html.Div([
+    # Mobile viewport meta tag
+    html.Meta(name="viewport", content="width=device-width, initial-scale=1"),
     dcc.Location(id='url', refresh=False),
     dcc.Store(id='answers', data=[5]*len(ThoughtProbes)),  # Global store for answers
     dcc.Store(id='participant-data', data={}),  # Global store for participant info
+    dcc.Store(id='data-saved', data=False),  # Store to track if data has been saved
     html.Div(id='page-content')
 ])
 
@@ -154,16 +175,20 @@ def display_question(q_index, answers):
 
     question_card = dbc.Card([
         dbc.CardBody([
-            html.H5(f"Вопрос {q_index + 1} из {len(ThoughtProbes)}"),
-            html.P(question_text, style={"fontWeight": "bold"}),
-            dcc.Slider(
-                id='current-slider',
-                min=1, max=10, step=1, value=slider_value,
-                marks={1: "Совсем нет", 10: "Полностью"},
-                tooltip={"placement": "bottom", "always_visible": True}
-            )
+            html.H5(f"Вопрос {q_index + 1} из {len(ThoughtProbes)}", className="text-center mb-3"),
+            html.P(question_text, style={"fontWeight": "bold"}, className="text-center mb-4"),
+            html.Div([
+                dcc.Slider(
+                    id='current-slider',
+                    min=1, max=10, step=1, value=slider_value,
+                    marks={1: {"label": "Совсем нет", "style": {"fontSize": "12px"}}, 
+                           10: {"label": "Полностью", "style": {"fontSize": "12px"}}},
+                    tooltip={"placement": "bottom", "always_visible": True},
+                    className="mb-3"
+                )
+            ], style={"padding": "0 20px"})
         ])
-    ])
+    ], className="mb-3")
 
     prev_disabled = (q_index == 0)
     next_label = "Завершить" if q_index == len(ThoughtProbes) - 1 else "Далее"
@@ -171,18 +196,21 @@ def display_question(q_index, answers):
     return question_card, prev_disabled, next_label
 
 
-# Navigation callback (without slider input)
+# Navigation callback
 @app.callback(
     Output('question-index', 'data'),
-    Output('save-status', 'children'),
+    Output('question-save-status', 'children'),
+    Output('data-saved', 'data'),
+    Output('brain-button-container', 'children'),
     Input('next-btn', 'n_clicks'),
     Input('prev-btn', 'n_clicks'),
     State('question-index', 'data'),
     State('answers', 'data'),
     State('participant-data', 'data'),
+    State('data-saved', 'data'),
     prevent_initial_call=True
 )
-def navigate_questions(next_clicks, prev_clicks, question_index, answers, participant_data):
+def navigate_questions(next_clicks, prev_clicks, question_index, answers, participant_data, data_saved):
     ctx = dash.callback_context
     if not ctx.triggered:
         raise dash.exceptions.PreventUpdate
@@ -197,7 +225,8 @@ def navigate_questions(next_clicks, prev_clicks, question_index, answers, partic
         question_index = 0
 
     save_message = ""
-
+    brain_button = ""
+    
     if triggered_id == 'next-btn':
         if question_index < len(ThoughtProbes) - 1:
             question_index += 1
@@ -219,18 +248,33 @@ def navigate_questions(next_clicks, prev_clicks, question_index, answers, partic
                 
                 success, message = save_to_supabase(all_data)
                 if success:
-                    save_message = f"Данные успешно сохранены! ID участника: {timestamp}"
+                    save_message = html.Div([
+                        html.I(className="fas fa-check-circle me-2"),
+                        "Данные успешно сохранены!"
+                    ], className="alert alert-success", style={"textAlign": "center"})
+                    data_saved = True
                 else:
-                    save_message = f"Ошибка сохранения данных: {message}"
+                    save_message = html.Div([
+                        html.I(className="fas fa-exclamation-circle me-2"),
+                        f"Ошибка сохранения данных"
+                    ], className="alert alert-danger", style={"textAlign": "center"})
                     
             except Exception as e:
-                save_message = f"Ошибка сохранения данных: {e}"
+                save_message = html.Div([
+                    html.I(className="fas fa-exclamation-circle me-2"),
+                    "Ошибка сохранения данных"
+                ], className="alert alert-danger", style={"textAlign": "center"})
 
     elif triggered_id == 'prev-btn':
         if question_index > 0:
             question_index -= 1
 
-    return question_index, save_message
+    # Show brain button only if data has been saved
+    if data_saved:
+        brain_button = dbc.Button("Посмотреть мозг", href="/brain", color="info", 
+                                 size="lg", className="w-100 mb-2")
+
+    return question_index, save_message, data_saved, brain_button
 
 
 # Participant information callback
@@ -238,6 +282,7 @@ def navigate_questions(next_clicks, prev_clicks, question_index, answers, partic
     Output('participant-data', 'data'),
     Output('participant-save-status', 'children'),
     Output('url', 'pathname'),
+    Output('button-container', 'children'),
     Input('save-info-btn', 'n_clicks'),
     State('age-input', 'value'),
     State('comments-input', 'value'),
@@ -253,7 +298,16 @@ def save_participant_info(n_clicks, age, comments):
         "info_saved_at": datetime.now().isoformat()
     }
     
-    return participant_info, "Информация сохранена! Перенаправление к вопросам...", "/questions"
+    success_message = html.Div([
+        html.I(className="fas fa-check-circle me-2"),
+        "Информация сохранена! Перенаправление к вопросам..."
+    ], className="alert alert-success", style={"textAlign": "center"})
+    
+    # Update button to show it's been saved
+    new_button = dbc.Button("Перейти к вопросам", href="/questions", color="success", 
+                           size="lg", className="w-100 mb-2")
+    
+    return participant_info, success_message, "/questions", new_button
 
 
 # Separate callback to handle slider value updates
@@ -281,7 +335,7 @@ def update_answer(slider_value, question_index, answers):
 @app.callback(
     Output('brain-plot', 'figure'),
     Input('brain-switch', 'value'),
-    Input('answers', 'data')  # Changed from State to Input to trigger updates
+    Input('answers', 'data')
 )
 def update_brain_visualization(brain_switch, answers):
     """
@@ -299,11 +353,6 @@ def update_brain_visualization(brain_switch, answers):
     grads = np.zeros(gradsRaw.shape)
     gradsMean = grads[:, 0]
     
-    # Debug info - you can remove this later
-    print(f"Brain switch: {brain_switch}")
-    print(f"Answers: {answers}")
-    print(f"Answers length: {len(answers) if answers else 'None'}")
-    
     if brain_switch and answers and len(answers) == len(ThoughtProbes):
         # Use answers to make predictions
         X = np.array(answers).reshape(1, -1)
@@ -314,21 +363,16 @@ def update_brain_visualization(brain_switch, answers):
             for i, model in enumerate(fitted_models):
                 prediction[i] = model.predict(X)[0]
             
-            print(f"Predictions: {prediction}")  # Debug info
-            
             for i in range(n_grad):
                 grads[:, i] = np.asarray(gradsRaw[:, i]) * prediction[i]
             
             gradsMean = grads.mean(axis=1)
-            print("Using prediction-based visualization")  # Debug info
         except Exception as e:
-            print(f"Model loading error: {e}")  # Debug info
             # If model loading fails, use default visualization
             gradsMean = gradsRaw.mean(axis=1)
     else:
         # Default visualization without prediction
         gradsMean = gradsRaw.mean(axis=1)
-        print("Using default visualization")  # Debug info
     
     x, y, z = lvert[:, 0], lvert[:, 1], lvert[:, 2]
     
@@ -340,13 +384,16 @@ def update_brain_visualization(brain_switch, answers):
         title="Визуализация мозга" + (" (на основе ответов)" if brain_switch and answers else " (по умолчанию)")
     )
     
-    # Set camera viewing angle
+    # Mobile-friendly camera settings
     fig.update_layout(
         scene_camera=dict(
-            eye=dict(x=-2, y=0, z=0),  # Camera position
-            center=dict(x=0, y=0, z=0),     # Point camera looks at
-            up=dict(x=0, y=0, z=1)          # Up direction
-        )
+            eye=dict(x=-2, y=0, z=0),
+            center=dict(x=0, y=0, z=0),
+            up=dict(x=0, y=0, z=1)
+        ),
+        # Better mobile layout
+        margin=dict(l=0, r=0, t=40, b=0),
+        font=dict(size=12)
     )
     
     return fig
