@@ -387,13 +387,17 @@ def update_brain_visualization(brain_switch, answers):
     # Mobile-friendly camera settings
     fig.update_layout(
         scene_camera=dict(
-            eye=dict(x=-2, y=0, z=0),
+            eye=dict(x=-3.5, y=0, z=0),
             center=dict(x=0, y=0, z=0),
             up=dict(x=0, y=0, z=1)
         ),
         # Better mobile layout
         margin=dict(l=0, r=0, t=40, b=0),
         font=dict(size=12)
+        scene=dict(
+            aspectmode='cube',  # Maintain proportions
+            dragmode='orbit'    # Better touch interaction
+        )
     )
     
     return fig
