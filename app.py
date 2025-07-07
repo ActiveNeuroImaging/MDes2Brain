@@ -395,7 +395,7 @@ def update_brain_visualization(brain_switch, answers):
         margin=dict(l=0, r=0, t=40, b=0),
         font=dict(size=12),
         scene=dict(
-            aspectmode='cube',  # Maintain proportions
+            #aspectmode='cube',  # Maintain proportions
             dragmode='orbit'    # Better touch interaction
         )
     )
