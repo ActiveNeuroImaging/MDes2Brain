@@ -121,7 +121,7 @@ def page3_layout():
         dbc.Row([
             dbc.Col([
                 dbc.Label("Показать предсказанную активность мозга:"),
-                dbc.Switch(id="brain-switch", value=False, className="mb-3"),
+                dbc.Switch(id="brain-switch", value=True, className="mb-3"),
             ], width=12)
         ]),
         
