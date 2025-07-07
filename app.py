@@ -384,6 +384,8 @@ def update_brain_visualization(brain_switch, answers):
         title="Визуализация мозга" + (" (на основе ответов)" if brain_switch and answers else " (по умолчанию)")
     )
     
+    fig.update_traces(showscale=False)
+    
     # Mobile-friendly camera settings
     fig.update_layout(
         scene_camera=dict(
