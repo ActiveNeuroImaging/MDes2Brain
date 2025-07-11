@@ -168,11 +168,12 @@ def display_page(pathname):
         return page1_layout()
 
 
-# Question display callback
+# Question display callback - modified to handle button visibility
 @app.callback(
     Output('question-container', 'children'),
     Output('prev-btn', 'disabled'),
     Output('next-btn', 'children'),
+    Output('next-btn', 'style'),
     Input('question-index', 'data'),
     State('answers', 'data'),
 )
@@ -198,12 +199,19 @@ def display_question(q_index, answers):
     ], className="mb-3")
 
     prev_disabled = (q_index == 0)
-    next_label = "Далее" if q_index < len(ThoughtProbes) - 1 else "Завершить"
+    
+    # Hide the "Next" button on the last question
+    if q_index == len(ThoughtProbes) - 1:
+        next_label = ""
+        next_style = {"display": "none"}  # Hide the button completely
+    else:
+        next_label = "Далее"
+        next_style = {}
 
-    return question_card, prev_disabled, next_label
+    return question_card, prev_disabled, next_label, next_style
 
 
-# Navigation callback - modified to save automatically and show brain button
+# Navigation callback - modified to auto-save on reaching Q16
 @app.callback(
     Output('question-index', 'data'),
     Output('question-save-status', 'children'),
@@ -211,7 +219,7 @@ def display_question(q_index, answers):
     Output('brain-button-container', 'children'),
     Input('next-btn', 'n_clicks'),
     Input('prev-btn', 'n_clicks'),
-    State('question-index', 'data'),
+    Input('question-index', 'data'),  # Trigger when reaching Q16
     State('answers', 'data'),
     State('participant-data', 'data'),
     State('data-saved', 'data'),
@@ -237,47 +245,78 @@ def navigate_questions(next_clicks, prev_clicks, question_index, answers, partic
     if triggered_id == 'next-btn':
         if question_index < len(ThoughtProbes) - 1:
             question_index += 1
-        else:
-            # Save to Supabase on last question and show brain button
-            try:
-                # Generate unique identifier based on timestamp
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
-                
-                # Combine all data
-                all_data = {
-                    "participant_id": timestamp,
-                    "timestamp": datetime.now().isoformat(),
-                    "age": participant_data.get("age") if participant_data else None,
-                    "comments": participant_data.get("comments", "") if participant_data else "",
-                    "questionnaire_answers": answers,
-                    "questions": ThoughtProbes
-                }
-                
-                success, message = save_to_supabase(all_data)
-                if success:
-                    save_message = html.Div([
-                        html.I(className="fas fa-check-circle me-2"),
-                        "Данные успешно сохранены!"
-                    ], className="alert alert-success", style={"textAlign": "center"})
-                    data_saved = True
-                    # Show brain button after successful save
-                    brain_button = dbc.Button("Посмотреть мозг", href="/brain", color="info", 
-                                             size="lg", className="w-100 mb-2")
-                else:
+            
+            # Auto-save when reaching the last question (Q16)
+            if question_index == len(ThoughtProbes) - 1 and not data_saved:
+                try:
+                    # Generate unique identifier based on timestamp
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+                    
+                    # Combine all data
+                    all_data = {
+                        "participant_id": timestamp,
+                        "timestamp": datetime.now().isoformat(),
+                        "age": participant_data.get("age") if participant_data else None,
+                        "comments": participant_data.get("comments", "") if participant_data else "",
+                        "questionnaire_answers": answers,
+                        "questions": ThoughtProbes
+                    }
+                    
+                    success, message = save_to_supabase(all_data)
+                    if success:
+                        data_saved = True
+                        # Show brain button after successful save
+                        brain_button = dbc.Button("Посмотреть мозг", href="/brain", color="info", 
+                                                 size="lg", className="w-100 mb-2")
+                    else:
+                        save_message = html.Div([
+                            html.I(className="fas fa-exclamation-circle me-2"),
+                            f"Ошибка сохранения данных"
+                        ], className="alert alert-danger", style={"textAlign": "center"})
+                        
+                except Exception as e:
                     save_message = html.Div([
                         html.I(className="fas fa-exclamation-circle me-2"),
-                        f"Ошибка сохранения данных"
+                        "Ошибка сохранения данных"
                     ], className="alert alert-danger", style={"textAlign": "center"})
-                    
-            except Exception as e:
-                save_message = html.Div([
-                    html.I(className="fas fa-exclamation-circle me-2"),
-                    "Ошибка сохранения данных"
-                ], className="alert alert-danger", style={"textAlign": "center"})
 
     elif triggered_id == 'prev-btn':
         if question_index > 0:
             question_index -= 1
+
+    # Auto-save trigger when landing on Q16 for the first time
+    elif triggered_id == 'question-index' and question_index == len(ThoughtProbes) - 1 and not data_saved:
+        try:
+            # Generate unique identifier based on timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+            
+            # Combine all data
+            all_data = {
+                "participant_id": timestamp,
+                "timestamp": datetime.now().isoformat(),
+                "age": participant_data.get("age") if participant_data else None,
+                "comments": participant_data.get("comments", "") if participant_data else "",
+                "questionnaire_answers": answers,
+                "questions": ThoughtProbes
+            }
+            
+            success, message = save_to_supabase(all_data)
+            if success:
+                data_saved = True
+                # Show brain button after successful save
+                brain_button = dbc.Button("Посмотреть мозг", href="/brain", color="info", 
+                                         size="lg", className="w-100 mb-2")
+            else:
+                save_message = html.Div([
+                    html.I(className="fas fa-exclamation-circle me-2"),
+                    f"Ошибка сохранения данных"
+                ], className="alert alert-danger", style={"textAlign": "center"})
+                
+        except Exception as e:
+            save_message = html.Div([
+                html.I(className="fas fa-exclamation-circle me-2"),
+                "Ошибка сохранения данных"
+            ], className="alert alert-danger", style={"textAlign": "center"})
 
     # Show brain button if data has been saved (for cases where user navigates back and forth)
     if data_saved and not brain_button:
