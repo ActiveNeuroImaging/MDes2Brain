@@ -105,19 +105,26 @@ def page2_layout():
         dbc.Row([
             dbc.Col([
                 dbc.Button("Назад", id="prev-btn", color="secondary", size="lg", className="w-100 mb-2")
-            ], width=12, md=4),
+            ], width=12, md=6),
             dbc.Col([
                 dbc.Button("Далее", id="next-btn", color="primary", size="lg", className="w-100 mb-2")
-            ], width=12, md=4),
-            dbc.Col([
-                html.Div(id="brain-button-container")  # Will be populated when data is saved
-            ], width=12, md=4),
+            ], width=12, md=6),
         ], className="mt-3"),
+        
+        # Brain visualization button container
+        html.Div(id="brain-button-container", className="mt-3"),
     ], className="p-3", fluid=True)
 
 def page3_layout():
     return dbc.Container([
         html.H2("Визуализация мозга", className="text-center mb-4"),
+        
+        # Loading message
+        html.Div(id="loading-message", children=[
+            html.Div("Подождите несколько секунд...", className="text-center mb-3", 
+                    style={"fontSize": "18px", "fontWeight": "bold"})
+        ]),
+        
         dbc.Row([
             dbc.Col([
                 dbc.Label("Показать предсказанную активность мозга:"),
@@ -142,7 +149,7 @@ app.layout = html.Div([
     # Mobile viewport meta tag
     html.Meta(name="viewport", content="width=device-width, initial-scale=1"),
     dcc.Location(id='url', refresh=False),
-    dcc.Store(id='answers', data=[5]*len(ThoughtProbes)),  # Global store for answers
+    dcc.Store(id='answers', data=[5.5]*len(ThoughtProbes)),  # Global store for answers - changed to 5.5
     dcc.Store(id='participant-data', data={}),  # Global store for participant info
     dcc.Store(id='data-saved', data=False),  # Store to track if data has been saved
     html.Div(id='page-content')
@@ -171,7 +178,7 @@ def display_page(pathname):
 )
 def display_question(q_index, answers):
     question_text = ThoughtProbes[q_index]
-    slider_value = answers[q_index] if answers else 5
+    slider_value = answers[q_index] if answers else 5.5
 
     question_card = dbc.Card([
         dbc.CardBody([
@@ -180,10 +187,10 @@ def display_question(q_index, answers):
             html.Div([
                 dcc.Slider(
                     id='current-slider',
-                    min=1, max=10, step=1, value=slider_value,
+                    min=1, max=10, step=0.1, value=slider_value,
                     marks={1: {"label": "Совсем нет", "style": {"fontSize": "12px"}}, 
                            10: {"label": "Полностью", "style": {"fontSize": "12px"}}},
-                    tooltip={"placement": "bottom", "always_visible": True},
+                    tooltip={"placement": "bottom", "always_visible": False},  # Hide tooltip to remove numbers
                     className="mb-3"
                 )
             ], style={"padding": "0 20px"})
@@ -191,12 +198,12 @@ def display_question(q_index, answers):
     ], className="mb-3")
 
     prev_disabled = (q_index == 0)
-    next_label = "Завершить" if q_index == len(ThoughtProbes) - 1 else "Далее"
+    next_label = "Далее" if q_index < len(ThoughtProbes) - 1 else "Завершить"
 
     return question_card, prev_disabled, next_label
 
 
-# Navigation callback
+# Navigation callback - modified to save automatically and show brain button
 @app.callback(
     Output('question-index', 'data'),
     Output('question-save-status', 'children'),
@@ -220,7 +227,7 @@ def navigate_questions(next_clicks, prev_clicks, question_index, answers, partic
     next_clicks = next_clicks or 0
     prev_clicks = prev_clicks or 0
     if answers is None:
-        answers = [5] * len(ThoughtProbes)
+        answers = [5.5] * len(ThoughtProbes)
     if question_index is None:
         question_index = 0
 
@@ -231,7 +238,7 @@ def navigate_questions(next_clicks, prev_clicks, question_index, answers, partic
         if question_index < len(ThoughtProbes) - 1:
             question_index += 1
         else:
-            # Save to Supabase on last question Next click
+            # Save to Supabase on last question and show brain button
             try:
                 # Generate unique identifier based on timestamp
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
@@ -253,6 +260,9 @@ def navigate_questions(next_clicks, prev_clicks, question_index, answers, partic
                         "Данные успешно сохранены!"
                     ], className="alert alert-success", style={"textAlign": "center"})
                     data_saved = True
+                    # Show brain button after successful save
+                    brain_button = dbc.Button("Посмотреть мозг", href="/brain", color="info", 
+                                             size="lg", className="w-100 mb-2")
                 else:
                     save_message = html.Div([
                         html.I(className="fas fa-exclamation-circle me-2"),
@@ -269,8 +279,8 @@ def navigate_questions(next_clicks, prev_clicks, question_index, answers, partic
         if question_index > 0:
             question_index -= 1
 
-    # Show brain button only if data has been saved
-    if data_saved:
+    # Show brain button if data has been saved (for cases where user navigates back and forth)
+    if data_saved and not brain_button:
         brain_button = dbc.Button("Посмотреть мозг", href="/brain", color="info", 
                                  size="lg", className="w-100 mb-2")
 
@@ -323,7 +333,7 @@ def update_answer(slider_value, question_index, answers):
         raise dash.exceptions.PreventUpdate
     
     if answers is None:
-        answers = [5] * len(ThoughtProbes)
+        answers = [5.5] * len(ThoughtProbes)
     
     # Update the current answer
     answers[question_index] = slider_value
